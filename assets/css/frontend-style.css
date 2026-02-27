@@ -1,0 +1,336 @@
+/**
+ * Simple Member Database Manager - Frontend Styles
+ * Unified Version: No Conflicts
+ */
+
+:root {
+    --smdm-primary: #2563eb;
+    --smdm-bg: #f8fafc;
+    --smdm-text: #1e293b;
+    --smdm-muted: #64748b;
+    --smdm-border: #e2e8f0;
+}
+
+.smdm-directory-wrapper {
+    background-color: var(--smdm-bg);
+    padding: 40px 20px;
+    border-radius: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ==========================================
+   SEARCH & FILTER HEADER
+   ========================================== */
+.smdm-directory-header {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 32px;
+}
+
+.smdm-modern-filter {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    align-items: center;
+}
+
+.smdm-input-group {
+    position: relative;
+    width: 100%;
+}
+
+.smdm-input-group .dashicons {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--smdm-muted);
+}
+
+.smdm-input-group input, 
+.smdm-input-group select {
+    width: 100%;
+    padding: 12px 12px 12px 40px !important;
+    border: 1px solid var(--smdm-border);
+    border-radius: 8px;
+    background: #fcfcfc;
+    font-size: 14px;
+    height: 45px !important;
+    box-shadow: none !important;
+}
+
+.smdm-btn-primary {
+    background: var(--smdm-primary);
+    color: white !important;
+    padding: 0 28px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.smdm-btn-primary:hover { 
+    background: #1d4ed8; 
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.smdm-btn-reset {
+    text-decoration: none;
+    color: var(--smdm-muted);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.smdm-btn-reset:hover { color: var(--smdm-text); }
+
+/* ==========================================
+   MEMBER GRID & CARDS
+   ========================================== */
+.smdm-modern-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.smdm-profile-card {
+    background: white;
+    border: 1px solid var(--smdm-border);
+    border-radius: 16px;
+    padding: 30px 24px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.smdm-profile-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.smdm-card-header {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.smdm-avatar-circle {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.smdm-status-dot {
+    width: 16px;
+    height: 16px;
+    background: #10b981;
+    border: 3px solid white;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+/* Card Body & Field Details */
+.smdm-card-body { flex-grow: 1; }
+
+.smdm-card-body h3 {
+    font-size: 20px;
+    color: var(--smdm-text);
+    margin: 12px 0;
+    font-weight: 700;
+}
+
+.smdm-tag {
+    background: #eff6ff;
+    color: var(--smdm-primary);
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.smdm-card-info-list {
+    text-align: left;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.smdm-info-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 !important;
+    font-size: 13px;
+    color: var(--smdm-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.smdm-info-line .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+}
+
+/* Card Footer */
+.smdm-card-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--smdm-border);
+}
+
+.smdm-view-details-btn {
+    background: #f1f5f9;
+    color: var(--smdm-primary);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.2s;
+    font-size: 14px;
+}
+
+.smdm-view-details-btn:hover {
+    background: var(--smdm-primary);
+    color: white;
+}
+
+/* ==========================================
+   MODAL / POPUP STYLING
+   ========================================== */
+.smdm-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 99999; 
+    left: 0; top: 0;
+    width: 100%; height: 100%; 
+    background-color: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.smdm-modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 550px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: smdmFadeIn 0.3s ease-out;
+}
+
+@keyframes smdmFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.smdm-close {
+    position: absolute;
+    right: 24px; top: 20px;
+    color: var(--smdm-muted);
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.smdm-close:hover { color: var(--smdm-text); }
+
+.smdm-modal-header { text-align: center; margin-bottom: 30px; }
+
+.smdm-avatar-large {
+    width: 100px; height: 100px;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    color: white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px; font-weight: bold; margin: 0 auto 15px;
+}
+
+.smdm-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 30px;
+}
+
+.smdm-info-item {
+    word-wrap: break-word;
+    line-height: 1.6;
+}
+
+.smdm-info-item strong { 
+    color: #94a3b8; 
+    font-size: 11px; 
+    text-transform: uppercase; 
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+}
+
+/* ==========================================
+   PAGINATION & RESULTS
+   ========================================== */
+.smdm-modern-pagination {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.smdm-modern-pagination .page-numbers {
+    padding: 10px 18px;
+    background: white;
+    border: 1px solid var(--smdm-border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--smdm-text);
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.smdm-modern-pagination .current {
+    background: var(--smdm-primary);
+    color: white;
+    border-color: var(--smdm-primary);
+}
+
+.smdm-no-results {
+    grid-column: 1 / -1;
+    padding: 80px;
+    text-align: center;
+    background: white;
+    border-radius: 16px;
+    color: var(--smdm-muted);
+    font-weight: 500;
+}
