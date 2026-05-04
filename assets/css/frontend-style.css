@@ -235,27 +235,29 @@
     top: 0;
     width: 100%;
     height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
     background-color: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(4px);
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
-    padding: 24px 16px;
+    padding: 32px 16px;
 }
 
-/* jQuery fadeIn sets display:block; flex keeps the card centered horizontally when content is short */
+/* Center the card in the viewport (avoids sitting under / flush with the theme header) */
 .smdm-modal.smdm-modal--open {
     display: flex !important;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
 }
 
 .smdm-modal-content {
     background-color: #ffffff;
-    margin: 0 auto 32px;
+    margin: auto;
     padding: 40px 40px 36px;
     border-radius: 24px;
     width: 100%;
@@ -264,7 +266,8 @@
     position: relative;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     animation: smdmFadeIn 0.3s ease-out;
-    max-height: calc(100vh - 48px);
+    max-height: calc(100vh - 64px);
+    max-height: calc(100dvh - 64px);
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -320,7 +323,8 @@
 
     .smdm-modal-content {
         padding: 32px 24px 28px;
-        max-height: calc(100vh - 32px);
+        max-height: calc(100vh - 48px);
+        max-height: calc(100dvh - 48px);
     }
 }
 
