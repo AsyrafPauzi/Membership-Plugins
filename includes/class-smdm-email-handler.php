@@ -195,13 +195,24 @@ public function force_from_name($original_email_from) {
         
         $batch_size = 20; // Send 20 emails per AJAX request
 
-        // Query Members
+        // Query active members (legacy or dynamic status meta).
         $args = [
             'post_type'      => 'member',
             'posts_per_page' => -1,
-            'meta_key'       => '_member_status',
-            'meta_value'     => 'Active',
-            'fields'         => 'ids'
+            'fields'         => 'ids',
+            'meta_query'     => [
+                'relation' => 'OR',
+                [
+                    'key'     => '_member_status',
+                    'value'   => [ SMDM_Field_Schema::get_active_status_literal(), 'Active' ],
+                    'compare' => 'IN',
+                ],
+                [
+                    'key'     => SMDM_Field_Schema::meta_key_for( 'account_status' ),
+                    'value'   => [ SMDM_Field_Schema::get_active_status_literal(), 'Active' ],
+                    'compare' => 'IN',
+                ],
+            ],
         ];
 
         if ($cat !== 'all') {
@@ -215,8 +226,13 @@ public function force_from_name($original_email_from) {
         $current_batch_ids = array_slice($all_ids, $offset, $batch_size);
         $actual_sent_this_batch = 0;
 
+        $email_meta = SMDM_Field_Schema::meta_key_for( SMDM_Field_Schema::get_primary_email_field_id() );
+
         foreach ($current_batch_ids as $id) {
-            $email = get_post_meta($id, '_member_email', true);
+            $email = get_post_meta($id, $email_meta, true);
+            if (!$email) {
+                $email = get_post_meta($id, '_member_email', true);
+            }
             if ($email) {
                 $headers = ['Content-Type: text/html; charset=UTF-8'];
                 if (wp_mail($email, $subject, $content, $headers)) {

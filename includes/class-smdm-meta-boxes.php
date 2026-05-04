@@ -13,16 +13,23 @@ class SMDM_Meta_Boxes {
         wp_nonce_field('smdm_save_meta', 'smdm_meta_nonce');
         $email = get_post_meta($post->ID, '_member_email', true);
         $phone = get_post_meta($post->ID, '_member_phone', true);
-        $status = get_post_meta($post->ID, '_member_status', true);
+        $status = class_exists( 'SMDM_Field_Schema' )
+            ? SMDM_Field_Schema::get_member_value( $post->ID, array( 'id' => 'account_status' ) )
+            : get_post_meta( $post->ID, '_member_status', true );
+        if ( '' === $status ) {
+            $status = get_post_meta( $post->ID, '_member_status', true );
+        }
         $reg_date = get_post_meta($post->ID, '_member_date_registered', true);
 
         if (empty($reg_date) && $post->post_status == 'publish') {
             $reg_date = get_the_date('Y-m-d H:i:s', $post->ID);
         }
+        $a  = class_exists( 'SMDM_Field_Schema' ) ? SMDM_Field_Schema::get_active_status_literal() : 'Aktif';
+        $ia = class_exists( 'SMDM_Field_Schema' ) ? SMDM_Field_Schema::get_inactive_status_literal() : 'Tidak aktif';
         ?>
         <div class="smdm-meta-field">
-            <label>Email Address (Required)</label>
-            <input type="email" name="member_email" value="<?php echo esc_attr($email); ?>" required class="widefat">
+            <label><?php esc_html_e( 'Email address', 'smdm' ); ?> <span class="description"><?php esc_html_e( '(optional)', 'smdm' ); ?></span></label>
+            <input type="email" name="member_email" value="<?php echo esc_attr( $email ); ?>" class="widefat">
         </div>
         <div class="smdm-meta-field">
             <label>Phone Number</label>
@@ -31,8 +38,8 @@ class SMDM_Meta_Boxes {
         <div class="smdm-meta-field">
             <label>Status</label>
             <select name="member_status" class="widefat">
-                <option value="Active" <?php selected($status, 'Active'); ?>>Active</option>
-                <option value="Inactive" <?php selected($status, 'Inactive'); ?>>Inactive</option>
+                <option value="<?php echo esc_attr( $a ); ?>" <?php selected( in_array( $status, array( $a, 'Active' ), true ) ); ?>><?php echo esc_html( $a ); ?></option>
+                <option value="<?php echo esc_attr( $ia ); ?>" <?php selected( in_array( $status, array( $ia, 'Inactive' ), true ) ); ?>><?php echo esc_html( $ia ); ?></option>
             </select>
         </div>
         <div class="smdm-meta-field">

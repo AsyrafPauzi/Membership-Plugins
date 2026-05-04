@@ -22,6 +22,11 @@
 
 .smdm-main {
     flex: 1;
+    min-width: 0;
+}
+
+.smdm-content-area {
+    min-width: 0;
 }
 
 /* ==========================================================================
@@ -105,6 +110,10 @@
     margin-bottom: 30px;
 }
 
+.smdm-stats-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .smdm-stat-card {
     background: white;
     padding: 24px;
@@ -147,6 +156,19 @@
 .smdm-custom-table {
     width: 100%;
     border-collapse: collapse;
+}
+
+.smdm-member-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+}
+
+.smdm-member-table-desktop {
+    min-width: 980px;
 }
 
 .smdm-custom-table th {
@@ -198,6 +220,9 @@
 /* Resetting WP standard input styles for our app */
 .smdm-content-area input[type=text], 
 .smdm-content-area input[type=email], 
+.smdm-content-area input[type=tel], 
+.smdm-content-area input[type=date], 
+.smdm-content-area input[type=number], 
 .smdm-content-area input[type=password], 
 .smdm-content-area select {
     width: 100% !important;
@@ -209,6 +234,10 @@
     box-shadow: none !important;
     height: auto !important;
     transition: border-color 0.2s;
+}
+
+.smdm-content-area input[type=date] {
+    min-height: 48px !important;
 }
 
 .smdm-content-area input:focus, 
@@ -273,6 +302,18 @@
     background: #2563eb;
     color: white;
     border-color: #2563eb;
+}
+
+.smdm-btn-danger-outline {
+    color: #b91c1c;
+    border-color: #fecaca;
+    background: #fff1f2;
+}
+
+.smdm-btn-danger-outline:hover {
+    background: #b91c1c;
+    color: #fff !important;
+    border-color: #b91c1c;
 }
 
 .smdm-status-badge {
@@ -357,4 +398,456 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.smdm-req {
+    color: #ef4444;
+    font-weight: 800;
+}
+
+.smdm-muted {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.smdm-help-intro,
+.smdm-muted-block {
+    color: #64748b;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.smdm-category-label-form {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.smdm-category-label-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.smdm-category-label-row input[type=text] {
+    max-width: 320px;
+}
+
+.smdm-file-input {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.smdm-content-area textarea {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fcfcfc !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    box-shadow: none !important;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.smdm-input-compact,
+.smdm-textarea-compact {
+    width: 100%;
+    max-width: 100%;
+    font-size: 13px !important;
+}
+
+.smdm-field-builder-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    width: 100%;
+    max-width: 100%;
+}
+
+.smdm-field-def-table {
+    min-width: 1700px;
+    table-layout: auto;
+}
+
+/* Keep the page fixed horizontally; scroll only inside table wrapper. */
+.smdm-app-wrapper {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.smdm-field-def-table th,
+.smdm-field-def-table td {
+    padding: 10px 8px;
+    vertical-align: top;
+    font-size: 12px;
+    white-space: normal;
+}
+
+.smdm-field-def-table code {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.smdm-col-order { min-width: 92px; width: 92px; }
+.smdm-col-id { min-width: 170px; width: 170px; }
+.smdm-col-label { min-width: 230px; width: 230px; }
+.smdm-col-type { min-width: 150px; width: 150px; }
+.smdm-col-section { min-width: 180px; width: 180px; }
+.smdm-col-flags { min-width: 470px; width: 470px; }
+.smdm-col-options { min-width: 260px; width: 260px; }
+.smdm-col-actions { min-width: 120px; width: 120px; }
+
+.smdm-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #dbe4ee;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: grab;
+}
+
+.smdm-drag-handle:active {
+    cursor: grabbing;
+}
+
+.smdm-drag-handle .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+}
+
+.smdm-order-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    margin-left: 6px;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #1e40af;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.smdm-field-row.is-dragging {
+    opacity: 0.55;
+}
+
+.smdm-flag-cells label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #475569;
+}
+
+.smdm-flag-cells {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 260px;
+}
+
+.smdm-flag-cells input[type="checkbox"] {
+    margin: 0 !important;
+}
+
+.smdm-field-def-table .smdm-btn-small {
+    padding: 5px 8px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.smdm-field-def-table .smdm-textarea-compact {
+    min-height: 56px;
+    font-size: 12px !important;
+    line-height: 1.35;
+}
+
+.smdm-field-def-table .smdm-input-compact,
+.smdm-field-def-table select {
+    min-height: 34px !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+}
+
+.smdm-sticky-actions {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(248,250,252,0) 0%, #f8fafc 18%);
+    padding: 16px 0 8px 0;
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    z-index: 2;
+}
+
+.smdm-member-actions {
+    border-top: 1px solid #f1f5f9;
+    margin-top: 24px;
+    padding-top: 20px;
+}
+
+.smdm-nav-toggle {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px 0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    font-weight: 700;
+    color: #0f172a;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.smdm-nav-toggle .dashicons {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+}
+
+.smdm-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 10090;
+}
+
+.smdm-member-table-desktop {
+    display: table;
+}
+
+.smdm-member-cards {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.smdm-member-card {
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    padding: 16px;
+    background: #fafafa;
+}
+
+.smdm-member-card-head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.smdm-member-card-head > strong {
+    flex: 1;
+    min-width: 0;
+}
+
+.smdm-member-card-head .smdm-status-badge {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.smdm-member-card-select {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.smdm-member-bulk-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.smdm-col-bulk {
+    width: 44px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.smdm-col-bulk .smdm-member-bulk-cb,
+.smdm-col-bulk .smdm-member-bulk-select-all {
+    margin: 0;
+    vertical-align: middle;
+}
+
+.smdm-member-card-body p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #334155;
+}
+
+.smdm-member-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.smdm-action-cell {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.smdm-action-cell .smdm-btn-small + .smdm-btn-small {
+    margin-left: 8px;
+}
+
+.smdm-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.smdm-inline-form {
+    margin: 0;
+}
+
+.smdm-cat-grid {
+    grid-template-columns: 1fr;
+}
+
+.smdm-ie-page {
+    margin-bottom: 30px;
+}
+
+.smdm-ie-page .smdm-content-card {
+    margin-bottom: 0;
+}
+
+.smdm-ie-section {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid #eef2f7;
+}
+
+.smdm-ie-template-actions {
+    margin-bottom: 12px;
+}
+
+.smdm-ie-import-form .smdm-file-input {
+    margin-bottom: 12px;
+}
+
+@media (min-width: 960px) {
+    .smdm-cat-grid {
+        grid-template-columns: 1fr 2fr;
+    }
+}
+
+@media (max-width: 960px) {
+    .smdm-app-wrapper {
+        flex-direction: column;
+        margin: 12px 12px 0 0;
+        gap: 0;
+    }
+
+    .smdm-nav-toggle {
+        display: inline-flex;
+    }
+
+    .smdm-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        max-width: min(300px, 92vw);
+        width: 100%;
+        z-index: 10095;
+        border-radius: 0 20px 20px 0;
+        transform: translateX(-102%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .smdm-app-wrapper.smdm-nav-open .smdm-sidebar {
+        transform: translateX(0);
+    }
+
+    .smdm-app-wrapper.smdm-nav-open .smdm-sidebar-overlay {
+        display: block;
+    }
+
+    .smdm-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .smdm-stats-grid.smdm-stats-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .smdm-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .smdm-span-2 {
+        grid-column: span 1;
+    }
+
+    .smdm-header-bar h1 {
+        font-size: 22px;
+    }
+
+    .smdm-member-table-desktop {
+        display: none;
+    }
+
+    .smdm-member-cards {
+        display: flex;
+    }
+
+    .smdm-dash-charts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .smdm-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .smdm-stats-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.smdm-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.smdm-member-form-card .form-group {
+    margin-bottom: 0;
 }

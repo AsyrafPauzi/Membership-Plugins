@@ -228,25 +228,53 @@
    MODAL / POPUP STYLING
    ========================================== */
 .smdm-modal {
-    display: none; 
-    position: fixed; 
-    z-index: 99999; 
-    left: 0; top: 0;
-    width: 100%; height: 100%; 
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     background-color: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(4px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    padding: 24px 16px;
+}
+
+/* jQuery fadeIn sets display:block; flex keeps the card centered horizontally when content is short */
+.smdm-modal.smdm-modal--open {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .smdm-modal-content {
     background-color: #ffffff;
-    margin: 5% auto;
-    padding: 40px;
+    margin: 0 auto 32px;
+    padding: 40px 40px 36px;
     border-radius: 24px;
-    width: 90%;
-    max-width: 550px;
+    width: 100%;
+    max-width: 880px;
+    flex: 0 1 auto;
     position: relative;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     animation: smdmFadeIn 0.3s ease-out;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+    .smdm-modal-content {
+        width: min(92vw, 880px);
+    }
 }
 
 @keyframes smdmFadeIn {
@@ -282,11 +310,25 @@
     gap: 25px;
     border-top: 1px solid #f1f5f9;
     padding-top: 30px;
+    align-content: start;
+}
+
+@media (max-width: 600px) {
+    .smdm-modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .smdm-modal-content {
+        padding: 32px 24px 28px;
+        max-height: calc(100vh - 32px);
+    }
 }
 
 .smdm-info-item {
     word-wrap: break-word;
+    overflow-wrap: anywhere;
     line-height: 1.6;
+    min-width: 0;
 }
 
 .smdm-info-item strong { 

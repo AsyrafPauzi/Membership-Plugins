@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Member Database Manager
  * Description: A simple, lightweight member management system for admin use only.
- * Version: 1.0.4
+ * Version: 1.4.7
  * Author: Asyraf Digital
  * Text Domain: smdm
  */
@@ -12,16 +12,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'SMDM_VERSION', '1.1.0' );
+define( 'SMDM_VERSION', '1.4.7' );
 define( 'SMDM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMDM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required files
+require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-field-schema.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-post-type.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-taxonomy.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-meta-boxes.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-admin-pages.php';
-require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-email-handler.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-import-export.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-frontend.php';
 
@@ -60,12 +60,13 @@ class Simple_Member_Database_Manager {
 		new SMDM_Taxonomy();
 		new SMDM_Meta_Boxes();
 		new SMDM_Admin_Pages();
-		new SMDM_Email_Handler();
-		new SMDM_Import_Export();
+		SMDM_Import_Export::instance();
 		new SMDM_Frontend();
 
 		// Register activation hook
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
+
+		add_action( 'plugins_loaded', array( $this, 'maybe_upgrade_schema' ), 5 );
 
 		// Enqueue admin styles
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
@@ -90,14 +91,33 @@ class Simple_Member_Database_Manager {
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 		dbDelta( $sql );
+
+		if ( class_exists( 'SMDM_Field_Schema' ) ) {
+			SMDM_Field_Schema::maybe_migrate();
+			SMDM_Field_Schema::seed_dummy_members();
+		}
+	}
+
+	/**
+	 * Ensure field schema exists after plugin updates (not only on activate).
+	 */
+	public function maybe_upgrade_schema() {
+		if ( class_exists( 'SMDM_Field_Schema' ) ) {
+			SMDM_Field_Schema::maybe_migrate();
+			SMDM_Field_Schema::maybe_migrate_malay_status();
+			SMDM_Field_Schema::maybe_relax_email_optional();
+		}
 	}
 
 	/**
 	 * Enqueue admin styles
 	 */
-	public function enqueue_admin_styles() {
+	public function enqueue_admin_styles( $hook ) {
 		wp_enqueue_style( 'smdm-admin-style', SMDM_PLUGIN_URL . 'assets/css/admin-style.css', array(), SMDM_VERSION );
 		wp_enqueue_style( 'smdm-frontend-style', SMDM_PLUGIN_URL . 'assets/css/frontend-style.css', array(), SMDM_VERSION );
+		if ( false !== strpos( (string) $hook, 'smdm-app' ) ) {
+			wp_enqueue_script( 'smdm-admin-shell', SMDM_PLUGIN_URL . 'assets/js/admin-shell.js', array(), SMDM_VERSION, true );
+		}
 	}
 }
 
