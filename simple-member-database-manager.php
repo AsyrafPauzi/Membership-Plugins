@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Member Database Manager
  * Description: A simple, lightweight member management system for admin use only.
- * Version: 1.4.7
+ * Version: 1.4.9
  * Author: Asyraf Digital
  * Text Domain: smdm
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'SMDM_VERSION', '1.4.7' );
+define( 'SMDM_VERSION', '1.4.9' );
 define( 'SMDM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMDM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

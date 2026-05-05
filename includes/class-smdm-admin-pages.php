@@ -15,6 +15,132 @@ class SMDM_Admin_Pages {
 		return '' !== $label ? $label : __( 'Category', 'smdm' );
 	}
 
+	/**
+	 * GET params for member list filters & pagination (admin).
+	 *
+	 * @return array{smdm_pp:string,smdm_pg:int,smdm_q_name:string,smdm_q_ic:string,smdm_q_state:string,smdm_q_agency:string}
+	 */
+	private function get_members_list_request_params() {
+		$allowed_pp = array( '5', '10', '25', '50', '100', 'all' );
+		$pp         = isset( $_GET['smdm_pp'] ) ? sanitize_text_field( wp_unslash( $_GET['smdm_pp'] ) ) : '25'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $pp, $allowed_pp, true ) ) {
+			$pp = '25';
+		}
+		$pg = isset( $_GET['smdm_pg'] ) ? max( 1, (int) $_GET['smdm_pg'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		return array(
+			'smdm_pp'       => $pp,
+			'smdm_pg'       => $pg,
+			'smdm_q_name'   => isset( $_GET['smdm_q_name'] ) ? sanitize_text_field( wp_unslash( $_GET['smdm_q_name'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'smdm_q_ic'     => isset( $_GET['smdm_q_ic'] ) ? sanitize_text_field( wp_unslash( $_GET['smdm_q_ic'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'smdm_q_state'  => isset( $_GET['smdm_q_state'] ) ? sanitize_text_field( wp_unslash( $_GET['smdm_q_state'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'smdm_q_agency' => isset( $_GET['smdm_q_agency'] ) ? sanitize_text_field( wp_unslash( $_GET['smdm_q_agency'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		);
+	}
+
+	/**
+	 * Build admin members tab URL preserving list state.
+	 *
+	 * @param array<string,mixed> $overrides Query args to set/replace (empty values removed unless false preserved).
+	 */
+	private function members_list_url( $overrides = array() ) {
+		$base = admin_url( 'admin.php' );
+		$p    = $this->get_members_list_request_params();
+		$args = array(
+			'page'           => 'smdm-app',
+			'tab'            => 'members',
+			'smdm_pp'        => $p['smdm_pp'],
+			'smdm_pg'        => $p['smdm_pg'] > 1 ? $p['smdm_pg'] : '',
+			'smdm_q_name'    => $p['smdm_q_name'],
+			'smdm_q_ic'      => $p['smdm_q_ic'],
+			'smdm_q_state'   => $p['smdm_q_state'],
+			'smdm_q_agency'  => $p['smdm_q_agency'],
+		);
+		$args = array_merge( $args, $overrides );
+		$args = array_filter(
+			$args,
+			function ( $v ) {
+				return '' !== $v && null !== $v;
+			}
+		);
+		return add_query_arg( $args, $base );
+	}
+
+	/**
+	 * @param array{smdm_pp:string,smdm_pg:int,smdm_q_name:string,smdm_q_ic:string,smdm_q_state:string,smdm_q_agency:string} $p
+	 * @return WP_Query
+	 */
+	private function query_members_list( $p ) {
+		$posts_per_page = ( 'all' === $p['smdm_pp'] ) ? -1 : (int) $p['smdm_pp'];
+		$args           = array(
+			'post_type'              => 'member',
+			'post_status'            => 'publish',
+			'posts_per_page'         => $posts_per_page,
+			'paged'                  => ( 'all' === $p['smdm_pp'] ) ? 1 : $p['smdm_pg'],
+			'orderby'                => 'title',
+			'order'                  => 'ASC',
+			'no_found_rows'          => ( 'all' === $p['smdm_pp'] ),
+			'update_post_meta_cache' => true,
+			'update_post_term_cache' => false,
+		);
+
+		if ( '' !== $p['smdm_q_name'] ) {
+			$args['s'] = $p['smdm_q_name'];
+		}
+
+		$meta_clauses = array( 'relation' => 'AND' );
+
+		$append_meta_or = function ( $field_id, $needle ) use ( &$meta_clauses ) {
+			if ( '' === $needle || ! SMDM_Field_Schema::get_field_by_id( $field_id ) ) {
+				return;
+			}
+			$like  = '*' . $needle . '*';
+			$parts = array(
+				'relation' => 'OR',
+				array(
+					'key'     => SMDM_Field_Schema::meta_key_for( $field_id ),
+					'value'   => $like,
+					'compare' => 'LIKE',
+				),
+			);
+			$legacy = SMDM_Field_Schema::legacy_meta_key( $field_id );
+			if ( $legacy ) {
+				$parts[] = array(
+					'key'     => $legacy,
+					'value'   => $like,
+					'compare' => 'LIKE',
+				);
+			}
+			$meta_clauses[] = $parts;
+		};
+
+		$append_meta_or( 'ic_number', $p['smdm_q_ic'] );
+		$append_meta_or( 'state', $p['smdm_q_state'] );
+
+		if ( '' !== $p['smdm_q_agency'] ) {
+			$like   = '*' . $p['smdm_q_agency'] . '*';
+			$agency = array( 'relation' => 'OR' );
+			foreach ( array( 'agensi', 'institusi' ) as $fid ) {
+				if ( SMDM_Field_Schema::get_field_by_id( $fid ) ) {
+					$agency[] = array(
+						'key'     => SMDM_Field_Schema::meta_key_for( $fid ),
+						'value'   => $like,
+						'compare' => 'LIKE',
+					);
+				}
+			}
+			if ( count( $agency ) > 1 ) {
+				$meta_clauses[] = $agency;
+			}
+		}
+
+		if ( count( $meta_clauses ) > 1 ) {
+			$args['meta_query'] = $meta_clauses;
+		}
+
+		return new WP_Query( $args );
+	}
+
 	public function render_app_shell() {
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 		$member_id  = isset( $_GET['member_id'] ) ? intval( $_GET['member_id'] ) : 0;
@@ -563,8 +689,8 @@ class SMDM_Admin_Pages {
 					if ( $pid <= 0 ) {
 						continue;
 					}
-					$p = get_post( $pid );
-					if ( ! $p || 'member' !== $p->post_type ) {
+					$post_check = get_post( $pid );
+					if ( ! $post_check || 'member' !== $post_check->post_type ) {
 						continue;
 					}
 					wp_delete_post( $pid, true );
@@ -587,25 +713,88 @@ class SMDM_Admin_Pages {
 			}
 		}
 
-		$members        = get_posts( array( 'post_type' => 'member', 'posts_per_page' => -1, 'post_status' => 'publish' ) );
-		$list_fields    = array();
+		$list_params = $this->get_members_list_request_params();
+		$list_query  = $this->query_members_list( $list_params );
+		$members     = $list_query->posts;
+
+		$ic_field     = SMDM_Field_Schema::get_field_by_id( 'ic_number' );
+		$state_field  = SMDM_Field_Schema::get_field_by_id( 'state' );
+		$agency_field = SMDM_Field_Schema::get_field_by_id( 'agensi' );
+		if ( ! $agency_field ) {
+			$agency_field = SMDM_Field_Schema::get_field_by_id( 'institusi' );
+		}
+
+		$list_fields = array();
 		foreach ( SMDM_Field_Schema::get_sorted_fields() as $f ) {
 			if ( in_array( $f['id'], array( 'full_name', 'email', 'account_status' ), true ) ) {
+				continue;
+			}
+			if ( in_array( $f['id'], array( 'ic_number', 'state', 'institusi', 'agensi' ), true ) ) {
 				continue;
 			}
 			if ( ! empty( $f['show_in_list'] ) ) {
 				$list_fields[] = $f;
 			}
 		}
-		$email_id = SMDM_Field_Schema::get_primary_email_field_id();
-		$colspan  = 5 + count( $list_fields );
+
+		$colspan = 1 + 1; // bulk + name
+		if ( $ic_field ) {
+			++$colspan;
+		}
+		if ( $state_field ) {
+			++$colspan;
+		}
+		if ( $agency_field ) {
+			++$colspan;
+		}
+		$colspan += count( $list_fields ) + 1 + 1; // status + actions
+
+		$bulk_form_action = $this->members_list_url( array( 'smdm_pg' => ( $list_params['smdm_pg'] > 1 ? $list_params['smdm_pg'] : '' ) ) );
 		?>
 		<div class="smdm-list-actions">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=smdm-app&tab=add_member' ) ); ?>" class="smdm-btn"><?php esc_html_e( '+ Add New Member', 'smdm' ); ?></a>
 		</div>
 
+		<form method="get" class="smdm-member-filters" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+			<input type="hidden" name="page" value="smdm-app" />
+			<input type="hidden" name="tab" value="members" />
+			<div class="smdm-member-filters-grid">
+				<div class="form-group">
+					<label for="smdm_q_name"><?php esc_html_e( 'Name', 'smdm' ); ?></label>
+					<input type="text" id="smdm_q_name" name="smdm_q_name" value="<?php echo esc_attr( $list_params['smdm_q_name'] ); ?>" class="smdm-input-compact" placeholder="<?php esc_attr_e( 'Search name…', 'smdm' ); ?>" />
+				</div>
+				<div class="form-group">
+					<label for="smdm_q_ic"><?php esc_html_e( 'IC', 'smdm' ); ?></label>
+					<input type="text" id="smdm_q_ic" name="smdm_q_ic" value="<?php echo esc_attr( $list_params['smdm_q_ic'] ); ?>" class="smdm-input-compact" placeholder="<?php esc_attr_e( 'IC / passport…', 'smdm' ); ?>" />
+				</div>
+				<div class="form-group">
+					<label for="smdm_q_state"><?php esc_html_e( 'State', 'smdm' ); ?></label>
+					<input type="text" id="smdm_q_state" name="smdm_q_state" value="<?php echo esc_attr( $list_params['smdm_q_state'] ); ?>" class="smdm-input-compact" placeholder="<?php esc_attr_e( 'State…', 'smdm' ); ?>" />
+				</div>
+				<div class="form-group">
+					<label for="smdm_q_agency"><?php esc_html_e( 'Agensi', 'smdm' ); ?></label>
+					<input type="text" id="smdm_q_agency" name="smdm_q_agency" value="<?php echo esc_attr( $list_params['smdm_q_agency'] ); ?>" class="smdm-input-compact" placeholder="<?php esc_attr_e( 'Agensi / institusi…', 'smdm' ); ?>" />
+				</div>
+				<div class="form-group smdm-filter-per-page">
+					<label for="smdm_pp"><?php esc_html_e( 'Per page', 'smdm' ); ?></label>
+					<select id="smdm_pp" name="smdm_pp">
+						<?php foreach ( array( '5' => '5', '10' => '10', '25' => '25', '50' => '50', '100' => '100', 'all' => __( 'All', 'smdm' ) ) as $val => $lab ) : ?>
+							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $list_params['smdm_pp'], $val ); ?>><?php echo esc_html( (string) $lab ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<div class="form-group smdm-filter-actions">
+					<label class="smdm-filter-actions-spacer">&nbsp;</label>
+					<div class="smdm-filter-buttons">
+						<button type="submit" class="smdm-btn"><?php esc_html_e( 'Apply filters', 'smdm' ); ?></button>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=smdm-app&tab=members' ) ); ?>" class="smdm-btn secondary" style="text-decoration:none;"><?php esc_html_e( 'Reset', 'smdm' ); ?></a>
+					</div>
+				</div>
+			</div>
+		</form>
+
 		<div class="smdm-content-card smdm-member-list-wrap">
-			<form method="post" class="smdm-members-bulk-form" data-msg-select-one="<?php echo esc_attr( __( 'Select at least one member.', 'smdm' ) ); ?>" data-msg-confirm-bulk="<?php echo esc_attr( __( 'Delete the selected members permanently? This cannot be undone.', 'smdm' ) ); ?>">
+			<form method="post" action="<?php echo esc_url( $bulk_form_action ); ?>" class="smdm-members-bulk-form" data-msg-select-one="<?php echo esc_attr( __( 'Select at least one member.', 'smdm' ) ); ?>" data-msg-confirm-bulk="<?php echo esc_attr( __( 'Delete the selected members permanently? This cannot be undone.', 'smdm' ) ); ?>">
 				<?php wp_nonce_field( 'smdm_members_bulk', 'smdm_members_bulk_nonce' ); ?>
 				<?php if ( ! empty( $members ) ) : ?>
 				<div class="smdm-member-bulk-bar">
@@ -620,7 +809,15 @@ class SMDM_Admin_Pages {
 							<input type="checkbox" class="smdm-member-bulk-select-all" title="<?php esc_attr_e( 'Select all', 'smdm' ); ?>" aria-label="<?php esc_attr_e( 'Select all members', 'smdm' ); ?>" <?php disabled( empty( $members ) ); ?> />
 						</th>
 						<th><?php esc_html_e( 'Name', 'smdm' ); ?></th>
-						<th><?php esc_html_e( 'Email', 'smdm' ); ?></th>
+						<?php if ( $ic_field ) : ?>
+							<th><?php echo esc_html( $ic_field['label'] ); ?></th>
+						<?php endif; ?>
+						<?php if ( $state_field ) : ?>
+							<th><?php echo esc_html( $state_field['label'] ); ?></th>
+						<?php endif; ?>
+						<?php if ( $agency_field ) : ?>
+							<th><?php echo esc_html( $agency_field['label'] ); ?></th>
+						<?php endif; ?>
 						<?php foreach ( $list_fields as $lf ) : ?>
 							<th><?php echo esc_html( $lf['label'] ); ?></th>
 						<?php endforeach; ?>
@@ -632,28 +829,46 @@ class SMDM_Admin_Pages {
 					<?php
 					if ( $members ) :
 						foreach ( $members as $m ) :
-							$email  = SMDM_Field_Schema::get_member_value( $m->ID, array( 'id' => $email_id ) );
 							$status = SMDM_Field_Schema::get_member_value( $m->ID, array( 'id' => 'account_status' ) );
+							$del_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'delete_member' => (int) $m->ID,
+										'page'         => 'smdm-app',
+										'tab'          => 'members',
+										'smdm_pp'      => $list_params['smdm_pp'],
+										'smdm_q_name'  => $list_params['smdm_q_name'],
+										'smdm_q_ic'    => $list_params['smdm_q_ic'],
+										'smdm_q_state' => $list_params['smdm_q_state'],
+										'smdm_q_agency' => $list_params['smdm_q_agency'],
+										'smdm_pg'      => $list_params['smdm_pg'] > 1 ? $list_params['smdm_pg'] : '',
+									),
+									admin_url( 'admin.php' )
+								),
+								'smdm_delete_member_' . (int) $m->ID
+							);
 							?>
 							<tr>
 								<td class="smdm-col-bulk">
 									<input type="checkbox" class="smdm-member-bulk-cb" name="member_ids[]" value="<?php echo esc_attr( (string) $m->ID ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: member name */ __( 'Select %s', 'smdm' ), get_the_title( $m->ID ) ) ); ?>" />
 								</td>
 								<td><strong><?php echo esc_html( get_the_title( $m->ID ) ); ?></strong></td>
-								<td><?php echo esc_html( $email ); ?></td>
+								<?php if ( $ic_field ) : ?>
+									<td><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $ic_field ) ); ?></td>
+								<?php endif; ?>
+								<?php if ( $state_field ) : ?>
+									<td><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $state_field ) ); ?></td>
+								<?php endif; ?>
+								<?php if ( $agency_field ) : ?>
+									<td><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $agency_field ) ); ?></td>
+								<?php endif; ?>
 								<?php foreach ( $list_fields as $lf ) : ?>
 									<td><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $lf ) ); ?></td>
 								<?php endforeach; ?>
 								<td><span class="smdm-status-badge <?php echo SMDM_Field_Schema::member_is_active( $m->ID ) ? 'active' : 'inactive'; ?>"><?php echo esc_html( $status ? $status : '—' ); ?></span></td>
 								<td class="smdm-action-cell">
 									<a href="<?php echo esc_url( admin_url( 'admin.php?page=smdm-app&member_id=' . intval( $m->ID ) ) ); ?>" class="smdm-btn-small"><?php esc_html_e( 'Edit', 'smdm' ); ?></a>
-									<?php
-									$delete_member_url = wp_nonce_url(
-										admin_url( 'admin.php?page=smdm-app&tab=members&delete_member=' . intval( $m->ID ) ),
-										'smdm_delete_member_' . intval( $m->ID )
-									);
-									?>
-									<a href="<?php echo esc_url( $delete_member_url ); ?>" class="smdm-btn-small smdm-btn-danger-outline" onclick="return confirm('<?php echo esc_js( __( 'Delete this member permanently?', 'smdm' ) ); ?>');"><?php esc_html_e( 'Delete', 'smdm' ); ?></a>
+									<a href="<?php echo esc_url( $del_url ); ?>" class="smdm-btn-small smdm-btn-danger-outline" onclick="return confirm('<?php echo esc_js( __( 'Delete this member permanently?', 'smdm' ) ); ?>');"><?php esc_html_e( 'Delete', 'smdm' ); ?></a>
 								</td>
 							</tr>
 						<?php endforeach; else : ?>
@@ -667,8 +882,24 @@ class SMDM_Admin_Pages {
 				<?php
 				if ( $members ) :
 					foreach ( $members as $m ) :
-						$email  = SMDM_Field_Schema::get_member_value( $m->ID, array( 'id' => $email_id ) );
 						$status = SMDM_Field_Schema::get_member_value( $m->ID, array( 'id' => 'account_status' ) );
+						$del_url = wp_nonce_url(
+							add_query_arg(
+								array(
+									'delete_member' => (int) $m->ID,
+									'page'         => 'smdm-app',
+									'tab'          => 'members',
+									'smdm_pp'      => $list_params['smdm_pp'],
+									'smdm_q_name'  => $list_params['smdm_q_name'],
+									'smdm_q_ic'    => $list_params['smdm_q_ic'],
+									'smdm_q_state' => $list_params['smdm_q_state'],
+									'smdm_q_agency' => $list_params['smdm_q_agency'],
+									'smdm_pg'      => $list_params['smdm_pg'] > 1 ? $list_params['smdm_pg'] : '',
+								),
+								admin_url( 'admin.php' )
+							),
+							'smdm_delete_member_' . (int) $m->ID
+						);
 						?>
 						<div class="smdm-member-card">
 							<div class="smdm-member-card-head">
@@ -679,25 +910,49 @@ class SMDM_Admin_Pages {
 								<span class="smdm-status-badge <?php echo SMDM_Field_Schema::member_is_active( $m->ID ) ? 'active' : 'inactive'; ?>"><?php echo esc_html( $status ? $status : '—' ); ?></span>
 							</div>
 							<div class="smdm-member-card-body">
-								<p><span class="smdm-muted"><?php esc_html_e( 'Email', 'smdm' ); ?></span><br><?php echo esc_html( $email ); ?></p>
+								<?php if ( $ic_field ) : ?>
+									<p><span class="smdm-muted"><?php echo esc_html( $ic_field['label'] ); ?></span><br><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $ic_field ) ); ?></p>
+								<?php endif; ?>
+								<?php if ( $state_field ) : ?>
+									<p><span class="smdm-muted"><?php echo esc_html( $state_field['label'] ); ?></span><br><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $state_field ) ); ?></p>
+								<?php endif; ?>
+								<?php if ( $agency_field ) : ?>
+									<p><span class="smdm-muted"><?php echo esc_html( $agency_field['label'] ); ?></span><br><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $agency_field ) ); ?></p>
+								<?php endif; ?>
 								<?php foreach ( $list_fields as $lf ) : ?>
 									<p><span class="smdm-muted"><?php echo esc_html( $lf['label'] ); ?></span><br><?php echo esc_html( SMDM_Field_Schema::get_member_value( $m->ID, $lf ) ); ?></p>
 								<?php endforeach; ?>
 							</div>
 							<div class="smdm-member-card-actions">
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=smdm-app&member_id=' . intval( $m->ID ) ) ); ?>" class="smdm-btn-small" style="width:100%;text-align:center;"><?php esc_html_e( 'Edit', 'smdm' ); ?></a>
-								<?php
-								$delete_member_url = wp_nonce_url(
-									admin_url( 'admin.php?page=smdm-app&tab=members&delete_member=' . intval( $m->ID ) ),
-									'smdm_delete_member_' . intval( $m->ID )
-								);
-								?>
-								<a href="<?php echo esc_url( $delete_member_url ); ?>" class="smdm-btn-small smdm-btn-danger-outline" style="width:100%;text-align:center;" onclick="return confirm('<?php echo esc_js( __( 'Delete this member permanently?', 'smdm' ) ); ?>');"><?php esc_html_e( 'Delete', 'smdm' ); ?></a>
+								<a href="<?php echo esc_url( $del_url ); ?>" class="smdm-btn-small smdm-btn-danger-outline" style="width:100%;text-align:center;" onclick="return confirm('<?php echo esc_js( __( 'Delete this member permanently?', 'smdm' ) ); ?>');"><?php esc_html_e( 'Delete', 'smdm' ); ?></a>
 							</div>
 						</div>
 					<?php endforeach; endif; ?>
 			</div>
 			</form>
+
+			<?php if ( 'all' !== $list_params['smdm_pp'] && $list_query->max_num_pages > 1 ) : ?>
+				<nav class="smdm-member-pagination" aria-label="<?php esc_attr_e( 'Member list pagination', 'smdm' ); ?>">
+					<?php
+					$big  = 999999999;
+					$base = str_replace( (string) $big, '%#%', esc_url( add_query_arg( 'smdm_pg', $big, remove_query_arg( 'smdm_pg', $this->members_list_url() ) ) ) );
+					echo wp_kses_post(
+						paginate_links(
+							array(
+								'base'      => $base,
+								'format'    => '',
+								'current'   => max( 1, $list_params['smdm_pg'] ),
+								'total'     => $list_query->max_num_pages,
+								'type'      => 'list',
+								'prev_text' => '&laquo;',
+								'next_text' => '&raquo;',
+							)
+						)
+					);
+					?>
+				</nav>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
