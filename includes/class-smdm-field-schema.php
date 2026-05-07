@@ -16,7 +16,30 @@ class SMDM_Field_Schema {
 	 * Allowed field types.
 	 */
 	public static function allowed_types() {
-		return array( 'text', 'textarea', 'email', 'tel', 'number', 'date', 'select', 'checkbox', 'state_ms', 'status' );
+		return array( 'text', 'textarea', 'email', 'tel', 'number', 'date', 'select', 'checkbox', 'state_ms', 'status', 'image', 'image_gallery' );
+	}
+
+	/**
+	 * Human-readable type label for Form Fields admin selects.
+	 *
+	 * @param string $type Field type key.
+	 */
+	public static function type_admin_label( $type ) {
+		$map = array(
+			'text'          => __( 'Text', 'smdm' ),
+			'textarea'      => __( 'Textarea', 'smdm' ),
+			'email'         => __( 'Email', 'smdm' ),
+			'tel'           => __( 'Phone', 'smdm' ),
+			'number'        => __( 'Number', 'smdm' ),
+			'date'          => __( 'Date', 'smdm' ),
+			'select'        => __( 'Select', 'smdm' ),
+			'checkbox'      => __( 'Checkbox', 'smdm' ),
+			'state_ms'      => __( 'Malaysia state', 'smdm' ),
+			'status'        => __( 'Status', 'smdm' ),
+			'image'         => __( 'Image (single)', 'smdm' ),
+			'image_gallery' => __( 'Images (gallery)', 'smdm' ),
+		);
+		return isset( $map[ $type ] ) ? $map[ $type ] : $type;
 	}
 
 	public static function get_malaysia_states() {
@@ -199,6 +222,22 @@ class SMDM_Field_Schema {
 				'show_in_directory_modal' => true,
 				'filterable'     => false,
 				'show_in_list'   => false,
+			),
+			array(
+				'id'                      => 'member_photos',
+				'label'                   => __( 'Member photos', 'smdm' ),
+				'type'                    => 'image_gallery',
+				'section'                 => 'personal',
+				'order'                   => $o++,
+				'required'                => false,
+				'placeholder'             => '',
+				'options'                 => array(),
+				'is_name_field'           => false,
+				'is_primary_email'        => false,
+				'show_in_directory'       => true,
+				'show_in_directory_modal' => true,
+				'filterable'              => false,
+				'show_in_list'            => false,
 			),
 			array(
 				'id'             => 'email',
@@ -633,7 +672,7 @@ class SMDM_Field_Schema {
 				'is_primary_email'       => ! empty( $f['is_primary_email'] ),
 				'show_in_directory'       => ! empty( $f['show_in_directory'] ),
 				'show_in_directory_modal' => ! empty( $f['show_in_directory_modal'] ),
-				'filterable'              => ! empty( $f['filterable'] ),
+				'filterable'              => ! empty( $f['filterable'] ) && ! in_array( $type, array( 'image', 'image_gallery' ), true ),
 				'show_in_list'            => ! empty( $f['show_in_list'] ),
 			);
 		}
@@ -851,6 +890,34 @@ class SMDM_Field_Schema {
 			case 'state_ms':
 				$s = sanitize_text_field( is_string( $raw ) ? $raw : '' );
 				return in_array( $s, self::get_malaysia_states(), true ) ? $s : '';
+			case 'image':
+				if ( ! class_exists( 'SMDM_Media' ) ) {
+					return '';
+				}
+				$raw_s = is_string( $raw ) ? $raw : '';
+				foreach ( SMDM_Media::parse_attachment_ids( $raw_s ) as $aid ) {
+					if ( SMDM_Media::is_image_attachment( $aid ) ) {
+						return (string) $aid;
+					}
+				}
+				return '';
+			case 'image_gallery':
+				if ( ! class_exists( 'SMDM_Media' ) ) {
+					return '';
+				}
+				$raw_s   = is_string( $raw ) ? $raw : '';
+				$valid   = array();
+				$seen    = array();
+				foreach ( SMDM_Media::parse_attachment_ids( $raw_s ) as $aid ) {
+					if ( isset( $seen[ $aid ] ) ) {
+						continue;
+					}
+					if ( SMDM_Media::is_image_attachment( $aid ) ) {
+						$valid[]     = $aid;
+						$seen[ $aid ] = true;
+					}
+				}
+				return implode( ',', $valid );
 			case 'tel':
 			case 'text':
 			default:
@@ -878,6 +945,12 @@ class SMDM_Field_Schema {
 			$legacy = self::legacy_meta_key( $id );
 			if ( $legacy ) {
 				update_post_meta( $post_id, $legacy, $val );
+			}
+
+			if ( class_exists( 'SMDM_Media' ) && in_array( $field['type'], array( 'image', 'image_gallery' ), true ) && '' !== $val ) {
+				foreach ( SMDM_Media::parse_attachment_ids( $val ) as $aid ) {
+					SMDM_Media::optimize_attachment_lossless( $aid );
+				}
 			}
 		}
 	}
@@ -1042,6 +1115,61 @@ class SMDM_Field_Schema {
 			}
 		}
 		update_option( 'smdm_email_optional_v1', 1, false );
+	}
+
+	/**
+	 * One-time: add Member photos field for sites that already had a saved schema.
+	 */
+	public static function maybe_append_member_photos_field() {
+		if ( get_option( 'smdm_member_photos_field_v1', false ) ) {
+			return;
+		}
+		$raw = self::get_raw();
+		if ( ! $raw || empty( $raw['fields'] ) || ! is_array( $raw['fields'] ) ) {
+			update_option( 'smdm_member_photos_field_v1', 1, false );
+			return;
+		}
+		foreach ( $raw['fields'] as $f ) {
+			if ( ! empty( $f['id'] ) && 'member_photos' === $f['id'] ) {
+				update_option( 'smdm_member_photos_field_v1', 1, false );
+				return;
+			}
+		}
+		$maxo = 0;
+		foreach ( $raw['fields'] as $f ) {
+			$maxo = max( $maxo, (int) ( $f['order'] ?? 0 ) );
+		}
+		$raw['fields'][] = array(
+			'id'                      => 'member_photos',
+			'label'                   => __( 'Member photos', 'smdm' ),
+			'type'                    => 'image_gallery',
+			'section'                 => 'personal',
+			'order'                   => $maxo + 1,
+			'required'                => false,
+			'placeholder'             => '',
+			'options'                 => array(),
+			'is_name_field'           => false,
+			'is_primary_email'        => false,
+			'show_in_directory'       => true,
+			'show_in_directory_modal' => true,
+			'filterable'              => false,
+			'show_in_list'            => false,
+		);
+		$normalized = self::normalize_fields( $raw['fields'] );
+		$errs       = self::validate_fields( $normalized );
+		if ( ! empty( $errs ) ) {
+			update_option( 'smdm_member_photos_field_v1', 1, false );
+			return;
+		}
+		update_option(
+			self::OPTION_KEY,
+			array(
+				'version' => self::SCHEMA_VERSION,
+				'fields'  => $normalized,
+			),
+			false
+		);
+		update_option( 'smdm_member_photos_field_v1', 1, false );
 	}
 
 	/**
@@ -1298,6 +1426,40 @@ class SMDM_Field_Schema {
 					esc_attr( $ph ),
 					$req
 				);
+				break;
+			case 'image':
+			case 'image_gallery':
+				$is_gallery = ( 'image_gallery' === $type );
+				$ids        = ( class_exists( 'SMDM_Media' ) && is_string( $value ) ) ? SMDM_Media::parse_attachment_ids( $value ) : array();
+				echo '<div class="smdm-media-field' . ( $is_gallery ? ' smdm-media-field--gallery' : '' ) . '" data-multiple="' . esc_attr( $is_gallery ? '1' : '0' ) . '">';
+				echo '<input type="hidden" id="smdm_cf_' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_string( $value ) ? $value : '' ) . '" class="smdm-media-ids" autocomplete="off" />';
+				echo '<div class="smdm-media-toolbar">';
+				printf(
+					'<button type="button" class="button smdm-media-add">%s</button>',
+					$is_gallery ? esc_html__( 'Add images', 'smdm' ) : esc_html__( 'Select image', 'smdm' )
+				);
+				echo ' ';
+				echo '<button type="button" class="button-link smdm-media-clear">' . esc_html__( 'Clear', 'smdm' ) . '</button>';
+				echo '</div>';
+				echo '<ul class="smdm-media-preview">';
+				foreach ( $ids as $aid ) {
+					if ( ! class_exists( 'SMDM_Media' ) || ! SMDM_Media::is_image_attachment( $aid ) ) {
+						continue;
+					}
+					$thumb = wp_get_attachment_image_url( $aid, 'thumbnail' );
+					if ( ! $thumb ) {
+						continue;
+					}
+					printf(
+						'<li class="smdm-media-tile" data-id="%d"><span class="smdm-media-thumb-wrap"><img src="%s" alt="" width="80" height="80" /></span><button type="button" class="button-link smdm-media-remove" aria-label="%s">&times;</button></li>',
+						$aid,
+						esc_url( $thumb ),
+						esc_attr__( 'Remove image', 'smdm' )
+					);
+				}
+				echo '</ul>';
+				echo '<p class="description">' . esc_html__( 'Uses the Media Library. On save, images are optimized (metadata stripped, maximum JPEG quality) to shrink files without aiming for visible quality loss.', 'smdm' ) . '</p>';
+				echo '</div>';
 				break;
 			default:
 				printf(

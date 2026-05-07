@@ -396,7 +396,7 @@ class SMDM_Admin_Pages {
 									<td class="smdm-col-type">
 										<select name="smdm_field_b[<?php echo esc_attr( $fid ); ?>][type]" <?php disabled( $protected ); ?>>
 											<?php foreach ( SMDM_Field_Schema::allowed_types() as $t ) : ?>
-												<option value="<?php echo esc_attr( $t ); ?>" <?php selected( $f['type'], $t ); ?>><?php echo esc_html( $t ); ?></option>
+												<option value="<?php echo esc_attr( $t ); ?>" <?php selected( $f['type'], $t ); ?>><?php echo esc_html( SMDM_Field_Schema::type_admin_label( $t ) ); ?></option>
 											<?php endforeach; ?>
 										</select>
 									</td>
@@ -449,9 +449,9 @@ class SMDM_Admin_Pages {
 				<div class="form-group">
 					<label><?php esc_html_e( 'Type', 'smdm' ); ?></label>
 					<select name="new_field_type">
-						<?php foreach ( SMDM_Field_Schema::allowed_types() as $t ) : ?>
-							<option value="<?php echo esc_attr( $t ); ?>"><?php echo esc_html( $t ); ?></option>
-						<?php endforeach; ?>
+										<?php foreach ( SMDM_Field_Schema::allowed_types() as $t ) : ?>
+											<option value="<?php echo esc_attr( $t ); ?>"><?php echo esc_html( SMDM_Field_Schema::type_admin_label( $t ) ); ?></option>
+										<?php endforeach; ?>
 					</select>
 				</div>
 				<div class="form-group">
@@ -635,7 +635,7 @@ class SMDM_Admin_Pages {
 								} else {
 									$val = SMDM_Field_Schema::get_member_value( $id, $field );
 								}
-								$span = ( 'textarea' === $field['type'] || 'state_ms' === $field['type'] ) ? 'smdm-span-2' : '';
+								$span = ( in_array( $field['type'], array( 'textarea', 'state_ms', 'image', 'image_gallery' ), true ) ) ? 'smdm-span-2' : '';
 								SMDM_Field_Schema::render_field_input( $field, $val, 'smdm_cf', $span );
 							endforeach;
 							?>

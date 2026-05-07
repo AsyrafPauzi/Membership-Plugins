@@ -53,6 +53,9 @@ class SMDM_Frontend {
 				continue;
 			}
 			$compare = in_array( $field['type'], array( 'text', 'textarea', 'tel', 'email' ), true ) ? 'LIKE' : '=';
+			if ( in_array( $field['type'], array( 'image', 'image_gallery' ), true ) ) {
+				continue;
+			}
 			$meta_query[] = array(
 				'key'     => SMDM_Field_Schema::meta_key_for( $fid ),
 				'value'   => $raw,
@@ -156,6 +159,27 @@ class SMDM_Frontend {
 						$terms         = get_the_terms( $id, 'member_category' );
 						$category_name = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : __( 'Member', 'smdm' );
 
+						$member_avatar_url = '';
+						foreach ( $schema as $field ) {
+							if ( ! in_array( $field['type'], array( 'image', 'image_gallery' ), true ) || empty( $field['show_in_directory'] ) ) {
+								continue;
+							}
+							$v = SMDM_Field_Schema::get_member_value( $id, $field );
+							if ( '' === $v || ! class_exists( 'SMDM_Media' ) ) {
+								continue;
+							}
+							foreach ( SMDM_Media::parse_attachment_ids( $v ) as $aid ) {
+								if ( ! SMDM_Media::is_image_attachment( $aid ) ) {
+									continue;
+								}
+								$u = wp_get_attachment_image_url( $aid, 'medium' );
+								if ( $u ) {
+									$member_avatar_url = $u;
+									break 2;
+								}
+							}
+						}
+
 						$modal_rows = array();
 						foreach ( $schema as $field ) {
 							if ( empty( $field['show_in_directory_modal'] ) || ! empty( $field['is_name_field'] ) ) {
@@ -165,6 +189,26 @@ class SMDM_Frontend {
 							if ( '' === $v || null === $v ) {
 								continue;
 							}
+							if ( in_array( $field['type'], array( 'image', 'image_gallery' ), true ) && class_exists( 'SMDM_Media' ) ) {
+								$urls = array();
+								foreach ( SMDM_Media::parse_attachment_ids( $v ) as $aid ) {
+									if ( ! SMDM_Media::is_image_attachment( $aid ) ) {
+										continue;
+									}
+									$u = wp_get_attachment_image_url( $aid, 'large' );
+									if ( $u ) {
+										$urls[] = $u;
+									}
+								}
+								if ( empty( $urls ) ) {
+									continue;
+								}
+								$modal_rows[] = array(
+									'label'  => $field['label'],
+									'images' => $urls,
+								);
+								continue;
+							}
 							$modal_rows[] = array(
 								'label' => $field['label'],
 								'value' => (string) $v,
@@ -172,14 +216,21 @@ class SMDM_Frontend {
 						}
 
 						$member_payload = array(
-							'name'     => get_the_title(),
-							'category' => $category_name,
-							'rows'     => $modal_rows,
+							'name'      => get_the_title(),
+							'category'  => $category_name,
+							'avatarUrl' => $member_avatar_url,
+							'rows'      => $modal_rows,
 						);
 						?>
 						<div class="smdm-profile-card">
 							<div class="smdm-card-header">
-								<div class="smdm-avatar-circle"><?php echo esc_html( strtoupper( substr( get_the_title(), 0, 1 ) ) ); ?></div>
+								<div class="smdm-avatar-circle">
+									<?php if ( $member_avatar_url ) : ?>
+										<img src="<?php echo esc_url( $member_avatar_url ); ?>" alt="" />
+									<?php else : ?>
+										<?php echo esc_html( strtoupper( substr( get_the_title(), 0, 1 ) ) ); ?>
+									<?php endif; ?>
+								</div>
 								<div class="smdm-status-dot"></div>
 							</div>
 							<div class="smdm-card-body">
@@ -189,6 +240,9 @@ class SMDM_Frontend {
 									<?php
 									foreach ( $schema as $field ) {
 										if ( empty( $field['show_in_directory'] ) || ! empty( $field['is_name_field'] ) ) {
+											continue;
+										}
+										if ( in_array( $field['type'], array( 'image', 'image_gallery' ), true ) ) {
 											continue;
 										}
 										$v = SMDM_Field_Schema::get_member_value( $id, $field );
@@ -207,7 +261,7 @@ class SMDM_Frontend {
 								</div>
 							</div>
 							<div class="smdm-card-footer">
-								<button type="button" class="smdm-view-details-btn" data-member="<?php echo esc_attr( wp_json_encode( $member_payload ) ); ?>">
+								<button type="button" class="smdm-view-details-btn" data-member="<?php echo esc_attr( wp_json_encode( $member_payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) ); ?>">
 									<?php esc_html_e( 'View Full Profile', 'smdm' ); ?>
 								</button>
 							</div>

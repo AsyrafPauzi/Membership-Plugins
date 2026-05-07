@@ -137,6 +137,15 @@
     font-size: 36px;
     font-weight: bold;
     margin: 0 auto;
+    overflow: hidden;
+}
+
+.smdm-avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 .smdm-status-dot {
@@ -305,6 +314,38 @@
     color: white; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 44px; font-weight: bold; margin: 0 auto 15px;
+    overflow: hidden;
+}
+
+.smdm-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.smdm-modal-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.smdm-modal-gallery a {
+    display: block;
+    line-height: 0;
+}
+
+.smdm-modal-gallery img {
+    max-width: 220px;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.smdm-info-item--images {
+    grid-column: 1 / -1;
 }
 
 .smdm-modal-grid {

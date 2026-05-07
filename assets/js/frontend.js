@@ -19,8 +19,24 @@ jQuery(document).ready(function($) {
 
         let rowsHtml = '';
         rows.forEach(function(row) {
-            rowsHtml += '<div class="smdm-info-item"><strong>' + escapeHtml(row.label) + '</strong><br>' + escapeHtml(row.value) + '</div>';
+            if (row.images && row.images.length) {
+                rowsHtml += '<div class="smdm-info-item smdm-info-item--images"><strong>' + escapeHtml(row.label) + '</strong>';
+                rowsHtml += '<div class="smdm-modal-gallery">';
+                row.images.forEach(function(src) {
+                    rowsHtml += '<a href="' + escapeHtml(src) + '" target="_blank" rel="noopener noreferrer"><img src="' + escapeHtml(src) + '" alt="" loading="lazy" /></a>';
+                });
+                rowsHtml += '</div></div>';
+            } else {
+                rowsHtml += '<div class="smdm-info-item"><strong>' + escapeHtml(row.label) + '</strong><br>' + escapeHtml(row.value || '') + '</div>';
+            }
         });
+
+        var avatarInner = '';
+        if (data.avatarUrl) {
+            avatarInner = '<img src="' + escapeHtml(data.avatarUrl) + '" alt="" />';
+        } else if (name) {
+            avatarInner = escapeHtml(name.charAt(0));
+        }
 
         if (!rowsHtml && data.email) {
             rowsHtml = '<div class="smdm-info-item"><strong>Email</strong><br>' + escapeHtml(data.email) + '</div>';
@@ -28,7 +44,7 @@ jQuery(document).ready(function($) {
 
         return (
             '<div class="smdm-modal-header">' +
-                '<div class="smdm-avatar-large">' + escapeHtml(name.charAt(0)) + '</div>' +
+                '<div class="smdm-avatar-large">' + avatarInner + '</div>' +
                 '<h2>' + escapeHtml(name) + '</h2>' +
                 '<span class="smdm-tag">' + escapeHtml(cat) + '</span>' +
             '</div>' +

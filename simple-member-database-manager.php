@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Member Database Manager
  * Description: A simple, lightweight member management system for admin use only.
- * Version: 1.4.9
+ * Version: 1.5.1
  * Author: Asyraf Digital
  * Text Domain: smdm
  */
@@ -12,11 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'SMDM_VERSION', '1.4.9' );
+define( 'SMDM_VERSION', '1.5.1' );
 define( 'SMDM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMDM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required files
+require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-media.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-field-schema.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-post-type.php';
 require_once SMDM_PLUGIN_DIR . 'includes/class-smdm-taxonomy.php';
@@ -106,6 +107,7 @@ class Simple_Member_Database_Manager {
 			SMDM_Field_Schema::maybe_migrate();
 			SMDM_Field_Schema::maybe_migrate_malay_status();
 			SMDM_Field_Schema::maybe_relax_email_optional();
+			SMDM_Field_Schema::maybe_append_member_photos_field();
 		}
 	}
 
@@ -117,6 +119,19 @@ class Simple_Member_Database_Manager {
 		wp_enqueue_style( 'smdm-frontend-style', SMDM_PLUGIN_URL . 'assets/css/frontend-style.css', array(), SMDM_VERSION );
 		if ( false !== strpos( (string) $hook, 'smdm-app' ) ) {
 			wp_enqueue_script( 'smdm-admin-shell', SMDM_PLUGIN_URL . 'assets/js/admin-shell.js', array(), SMDM_VERSION, true );
+			$tab      = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$mem_form = isset( $_GET['member_id'] ) ? absint( wp_unslash( $_GET['member_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$needs_media = in_array( $tab, array( 'add_member', 'edit_member' ), true ) || $mem_form > 0;
+			if ( $needs_media ) {
+				wp_enqueue_media();
+				wp_enqueue_script(
+					'smdm-admin-member-media',
+					SMDM_PLUGIN_URL . 'assets/js/admin-member-media.js',
+					array( 'jquery', 'media-editor' ),
+					SMDM_VERSION,
+					true
+				);
+			}
 		}
 	}
 }
